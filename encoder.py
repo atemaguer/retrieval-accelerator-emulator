@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 
-
 class BoWEncoder(nn.Module):
     def __init__(self, embed_dim, vocab_size, vocab=None) -> None:
         super().__init__()

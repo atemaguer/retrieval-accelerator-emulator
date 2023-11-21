@@ -25,17 +25,21 @@ class Tokenizer:
         return text.split(" ")
 
     def encode(self, text):
-        return [self.stoi[word] for word in self._split_text(text.lower())]
+        tokens = []
+        for word in self._split_text(text.lower()):
+            if word in self.stoi:
+                tokens.append(self.stoi[word])
+        return tokens
 
     def decode(self, tokens):
-        words = [self.itos[idx] for idx in tokens]
-        return " ".join(words)
+        wordlist = [self.itos[idx] for idx in tokens]
+        return " ".join(wordlist)
 
-    def save(self, filename):
+    def save_state(self, filename):
         with open(filename, "wb") as f:
             pickle.dump(self, f)
 
     @staticmethod
-    def load(filename):
+    def load_state(filename):
         with open(filename, "rb") as f:
             return pickle.load(f)

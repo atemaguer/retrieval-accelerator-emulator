@@ -1,25 +1,11 @@
 import torch
-from torch import nn
 
+from dataclasses import dataclass
 
+@dataclass
 class ScoringUnit:
-    def __init__(self) -> None:
-        pass
-
-    def update(self, signal):
-        pass
-
-    def get_score(self):
-        pass
-
-
-class BinaryScoringUnit(ScoringUnit):
-    pass
-
-
-class IntergerScoringUnit(ScoringUnit):
-    pass
-
+    score: int
+    id: int
 
 class RoutingNetwork:
     def __init__(self, v_size, d_size, pids) -> None:
@@ -35,10 +21,11 @@ class RoutingNetwork:
 
         for doc in documents:
             idx = self.pid_to_idx[doc["pid"]]
-            self.network[idx, :] += doc["embeddings"].squeeze(0)
+            self.network[idx, :] = doc["embeddings"].squeeze(0)
             counter += 1
 
-            print(f"{counter} documents indexed.")
+            if counter % 50 == 0:
+                print(f"{counter} documents indexed.")
 
     def get_scoring_unit_input(self, pid):
         idx = self.pid_to_idx[pid]
@@ -46,19 +33,27 @@ class RoutingNetwork:
 
     def get_scoring_unit_score(self, q_vector, pid):
         idx = self.pid_to_idx[pid]
-        scores = self.network[idx, :].bool() & q_vector.bool()
-        return scores.sum()
-
-    def batch_score_query(self, q_vector):
-        pass
+        all_scores = self.network.bool() & q_vector.bool()
+        return all_scores[idx, :].sum()
 
     def score_query(self, q_vector):
-        q_vector_bool = q_vector.bool()
-        scores = (self.network.bool() & q_vector_bool).sum(dim=-1)
+        mask = q_vector.bool()
+        scores = (self.network.bool() & mask).sum(dim=-1)
+
         pid_scores = [
-            (self.idx_to_pid[i], score.item()) for i, score in enumerate(scores)
+            ScoringUnit(id=self.idx_to_pid[i], score=score.item()) for i, score in enumerate(scores)
         ]
+        
         return pid_scores
+
+    def get_query_energy_consumption(self, q_vector):
+        mask = q_vector.bool()
+
+        states = (self.network.bool() & mask)
+        num_active_input_wires = mask.int().sum()
+        num_active_output_wires = states.int().sum()
+
+        return self.d_size * num_active_input_wires + num_active_output_wires * self.v_size
 
     def save_state(self, file_path):
         state = {
@@ -68,6 +63,7 @@ class RoutingNetwork:
             "pid_to_idx": self.pid_to_idx,
             "idx_to_pid": self.idx_to_pid,
         }
+        
         torch.save(state, file_path)
 
     @classmethod

@@ -6,7 +6,3 @@ def get_dataset(dataset_path):
     dataset = [{"pid": x[0], "text": x[1]} for x in df.itertuples(index=False)]
 
     return dataset
-
-
-def calculate_recall():
-    pass

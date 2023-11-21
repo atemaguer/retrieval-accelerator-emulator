@@ -1,57 +1,39 @@
 import torch
-import multiprocessing as mp
-from functools import partial
+import json
 
-from retriever import Retriever
+from retriever import Retriever, Ranker
 from encoder import BoWEncoder
 from indexer import RoutingNetwork
 from tokenizer import Tokenizer
 
 from utils import get_dataset
-
-documents_path = "./full_collection/raw.tsv"
-documents = get_dataset(documents_path)[:10]
-pids = [doc["pid"] for doc in documents]
-
-dev_set_path = "./dev_queries/raw.tsv"
-dev_set = get_dataset(dev_set_path)
+from eval import evaluate
 
 
-def tokenize_doc(tokenizer, doc):
-    return {"token_ids": torch.tensor(tokenizer.encode(doc["text"])), **doc}
+queries_path = "./dev_queries/raw.tsv"
+queries = get_dataset(queries_path)
 
-
-def encode_doc(encoder, doc):
-    return {"embeddings": encoder(doc["token_ids"]), **doc}
-
+labels_path = "./dev_qrel.json"
+labels = json.load(open(labels_path, "r"))
 
 if __name__ == "__main__":
-    # loading a tokenizer that was created from the corpus.
-    tokenizer = Tokenizer.load("./data/tokenizer.pkl")
+    tokenizer = Tokenizer.load_state("./data/tokenizer.pkl")
 
-    tokenized_docs = [
-        {"token_ids": torch.tensor(tokenizer.encode(doc["text"])), **doc}
-        for doc in documents
-    ]
-
-    print("done tokenizing")
+    print("tokenizer loaded")
 
     encoder = BoWEncoder(
         embed_dim=tokenizer.vocab_size, vocab_size=tokenizer.vocab_size
     )
 
-    doc_embeddings = [
-        {"embeddings": encoder(doc["token_ids"]), **doc} for doc in tokenized_docs
-    ]
+    indexer = RoutingNetwork.load_state("./data/index.pkl")
 
-    print("done embedding")
+    print("index loaded")
 
-    indexer = RoutingNetwork(tokenizer.vocab_size, len(documents), pids)
-    indexer.index(doc_embeddings)
+    ranker = Ranker(r_steps=1000)
 
-    print("done indexing")
     retriever = Retriever(tokenizer, encoder, indexer)
 
-    scores = retriever.search("George Washington")
+    print("calculating summary statistics...")
+    
+    evaluate(retriever, ranker, queries, labels)
 
-    print(len(scores))
