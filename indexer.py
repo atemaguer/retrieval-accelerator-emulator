@@ -59,7 +59,7 @@ class RoutingNetwork:
     
     def get_query_score(self, q_vector):
         mask = q_vector.bool()
-        scores = (self.network.bool() & mask).sum(dim=-1)
+        scores = (self.network.bool() & mask).int().sum(dim=-1)
 
         pid_scores = [
             ScoringUnit(id=self.idx_to_pid[i], score=score.item()) for i, score in enumerate(scores)

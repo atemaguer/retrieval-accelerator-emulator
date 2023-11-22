@@ -34,7 +34,6 @@ def summary_statistics(values):
     p95 = np.percentile(values, 95)
     print(f"P95: {p95}")
     
-    # Generate a histogram of the values
     plt.hist(values, bins=20, edgecolor='black')
     plt.title("Histogram Of Energy Consumption")
     plt.xlabel("Energy Value")
@@ -50,13 +49,13 @@ def evaluate(retriever, ranker, queries, labels):
         rankings = ranker.rank(scores)
         rankings = _convert_rankings_to_dict(rankings)
         recall = _calculate_recall(labels[str(query["pid"])], rankings)
-        # energy_consumed = _calculate_energy_consumption(retriever, query["text"])
+        energy_consumed = _calculate_energy_consumption(retriever, query["text"])
                                                         
         recalls.append(recall)
-        # energy_vals.append(energy_consumed)
+        energy_vals.append(energy_consumed)
 
     average_recall = round(sum(recalls) / len(recalls), 3) * 100
 
     print(f"Recall@1000 is {average_recall} %")
 
-    # summary_statistics(energy_vals)
+    summary_statistics(energy_vals)
