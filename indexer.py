@@ -36,7 +36,28 @@ class RoutingNetwork:
         all_scores = self.network.bool() & q_vector.bool()
         return all_scores[idx, :].sum()
 
-    def score_query(self, q_vector):
+    def get_query_tf_idf_score(self, q_vector):
+        terms_sum = self.network.sum(-1)
+
+        tf = self.network[:, q_vector.bool()] / terms_sum.unsqueeze(1)
+
+        mask = self.network.bool() & q_vector.bool()
+
+        num_docs_with_term = mask[:, q_vector.bool()].int().sum(0)
+
+        idf = self.d_size * (1 / num_docs_with_term)
+
+        tf_idf = tf * idf
+
+        tf_idf_scores = tf_idf.sum(-1)
+
+        pid_scores = [
+            ScoringUnit(id=self.idx_to_pid[i], score=score.item()) for i, score in enumerate(tf_idf_scores)
+        ]
+
+        return pid_scores
+    
+    def get_query_score(self, q_vector):
         mask = q_vector.bool()
         scores = (self.network.bool() & mask).sum(dim=-1)
 

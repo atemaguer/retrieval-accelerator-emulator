@@ -23,6 +23,7 @@ class Retriever:
     def search(self, query):
         q_tokens = torch.tensor(self.tokenizer.encode(query))
         q_vector = self.encoder(q_tokens)
-        scores = self.indexer.score_query(q_vector)
+        # scores = self.indexer.get_query_score(q_vector)
+        scores = self.indexer.get_query_tf_idf_score(q_vector)
         
         return scores

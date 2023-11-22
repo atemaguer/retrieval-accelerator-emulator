@@ -50,13 +50,13 @@ def evaluate(retriever, ranker, queries, labels):
         rankings = ranker.rank(scores)
         rankings = _convert_rankings_to_dict(rankings)
         recall = _calculate_recall(labels[str(query["pid"])], rankings)
-        energy_consumed = _calculate_energy_consumption(retriever, query["text"])
+        # energy_consumed = _calculate_energy_consumption(retriever, query["text"])
                                                         
         recalls.append(recall)
-        energy_vals.append(energy_consumed)
+        # energy_vals.append(energy_consumed)
 
     average_recall = round(sum(recalls) / len(recalls), 3) * 100
 
     print(f"Recall@1000 is {average_recall} %")
 
-    summary_statistics(energy_vals)
+    # summary_statistics(energy_vals)
